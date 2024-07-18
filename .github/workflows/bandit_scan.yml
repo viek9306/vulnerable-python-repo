@@ -30,7 +30,7 @@ jobs:
           echo "No critical vulnerabilities"
           exit 0
 
-    - name: Comment on pull request
+    - name: Comment on pull request if vulnerabilities are found
       if: failure()
       uses: actions/github-script@v5
       with:
@@ -43,7 +43,7 @@ jobs:
             body: "Block"
           })
 
-    - name: Auto-merge pull request
+    - name: Auto-merge pull request if no vulnerabilities are found
       if: success()
       uses: actions/github-script@v5
       with:
@@ -60,4 +60,9 @@ jobs:
             repo: context.repo.repo,
             body: "Successful"
           })
+
+
+
+
+
 
