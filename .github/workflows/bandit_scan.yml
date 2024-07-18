@@ -1,0 +1,63 @@
+name: Bandit Scan
+
+on: [pull_request]
+
+jobs:
+  bandit-scan:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.x'
+
+    - name: Install Bandit
+      run: |
+        pip install bandit
+
+    - name: Run Bandit
+      id: bandit
+      run: |
+        bandit -r . > bandit_report.txt
+        if grep -q "CRITICAL\|HIGH" bandit_report.txt; then
+          echo "Vulnerabilities found"
+          exit 1
+        else
+          echo "No critical vulnerabilities"
+          exit 0
+
+    - name: Comment on pull request
+      if: failure()
+      uses: actions/github-script@v5
+      with:
+        github-token: ${{ secrets.HUB_TOKEN }}
+        script: |
+          github.rest.issues.createComment({
+            issue_number: context.payload.pull_request.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: "Block"
+          })
+
+    - name: Auto-merge pull request
+      if: success()
+      uses: actions/github-script@v5
+      with:
+        github-token: ${{ secrets.HUB_TOKEN }}
+        script: |
+          github.rest.pulls.merge({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            pull_number: context.payload.pull_request.number
+          })
+          github.rest.issues.createComment({
+            issue_number: context.payload.pull_request.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: "Successful"
+          })
+
